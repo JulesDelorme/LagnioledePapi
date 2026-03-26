@@ -11,6 +11,9 @@ class FakeFavoriteCocktailDao(
 ) : FavoriteCocktailDao {
     private val items = MutableStateFlow(initialItems)
 
+    override fun observeAll(): Flow<List<FavoriteCocktailEntity>> =
+        items.map { favorites -> favorites.sortedByDescending { it.savedAt } }
+
     override fun observeFavoriteKeys(): Flow<List<String>> =
         items.map { favorites -> favorites.sortedByDescending { it.savedAt }.map { it.favoriteKey } }
 

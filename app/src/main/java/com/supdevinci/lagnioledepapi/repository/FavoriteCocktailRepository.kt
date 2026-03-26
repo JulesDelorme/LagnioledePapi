@@ -2,7 +2,9 @@ package com.supdevinci.lagnioledepapi.repository
 
 import com.supdevinci.lagnioledepapi.data.local.FavoriteCocktailDao
 import com.supdevinci.lagnioledepapi.data.local.toFavoriteEntity
+import com.supdevinci.lagnioledepapi.data.local.toModel
 import com.supdevinci.lagnioledepapi.model.CocktailDetail
+import com.supdevinci.lagnioledepapi.model.FavoriteCocktailSummary
 import com.supdevinci.lagnioledepapi.model.favoriteKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +14,9 @@ import kotlinx.coroutines.withContext
 class FavoriteCocktailRepository(
     private val dao: FavoriteCocktailDao
 ) {
+    fun observeFavoriteCocktails(): Flow<List<FavoriteCocktailSummary>> =
+        dao.observeAll().map { favorites -> favorites.map { it.toModel() } }
+
     fun observeFavoriteKeys(): Flow<Set<String>> =
         dao.observeFavoriteKeys().map { keys -> keys.toSet() }
 

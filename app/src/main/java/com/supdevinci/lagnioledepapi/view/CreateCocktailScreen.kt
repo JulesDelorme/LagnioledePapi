@@ -267,7 +267,7 @@ fun CreateCocktailScreen(
             if (uiState.savedCocktails.isNotEmpty()) {
                 FormLabel("🏡 Tes recettes maison")
                 Text(
-                    text = "Elles restent ici au frais pendant que l'onglet Cocktails reste branché 100% TheCocktailDB.",
+                    text = "Elles restent ici au frais et dans Ma cave pendant que l'onglet Cocktails reste branché 100% TheCocktailDB.",
                     color = MutedCream,
                     style = MaterialTheme.typography.bodyMedium
                 )

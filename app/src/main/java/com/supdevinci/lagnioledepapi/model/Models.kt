@@ -30,6 +30,17 @@ data class CocktailDetail(
     val accent: String
 )
 
+data class FavoriteCocktailSummary(
+    val favoriteKey: String,
+    val source: CocktailSource,
+    val id: String,
+    val name: String,
+    val imageUrl: String?,
+    val category: String,
+    val badge: String,
+    val savedAt: Long
+)
+
 fun CocktailDetail.favoriteKey(): String = "${source.name.lowercase()}:$id"
 
 enum class RankingRegion {
@@ -137,4 +148,13 @@ fun CustomCocktail.matchesQuery(query: String): Boolean {
             ingredient.name.lowercase().contains(normalized) ||
                 ingredient.dose.lowercase().contains(normalized)
         }
+}
+
+fun FavoriteCocktailSummary.matchesQuery(query: String): Boolean {
+    if (query.isBlank()) return true
+    val normalized = query.trim().lowercase()
+    return name.lowercase().contains(normalized) ||
+        category.lowercase().contains(normalized) ||
+        badge.lowercase().contains(normalized) ||
+        source.name.lowercase().contains(normalized)
 }

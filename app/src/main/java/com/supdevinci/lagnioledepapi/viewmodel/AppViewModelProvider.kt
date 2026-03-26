@@ -49,6 +49,17 @@ object AppViewModelProvider {
             }
         }
 
+    fun cellarFactory(appContainer: AppContainer): ViewModelProvider.Factory =
+        viewModelFactory {
+            initializer {
+                CellarViewModel(
+                    favoriteCocktailRepository = appContainer.favoriteCocktailRepository,
+                    customCocktailRepository = appContainer.customCocktailRepository,
+                    jokeRepository = appContainer.jokeRepository
+                )
+            }
+        }
+
     fun bacFactory(appContainer: AppContainer): ViewModelProvider.Factory =
         viewModelFactory {
             initializer {

@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FavoriteCocktailDao {
+    @Query("SELECT * FROM favorite_cocktails ORDER BY saved_at DESC")
+    fun observeAll(): Flow<List<FavoriteCocktailEntity>>
+
     @Query("SELECT favorite_key FROM favorite_cocktails ORDER BY saved_at DESC")
     fun observeFavoriteKeys(): Flow<List<String>>
 

@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.supdevinci.lagnioledepapi.model.CocktailDetail
+import com.supdevinci.lagnioledepapi.model.CocktailSource
+import com.supdevinci.lagnioledepapi.model.FavoriteCocktailSummary
 import com.supdevinci.lagnioledepapi.model.favoriteKey
 
 @Entity(tableName = "favorite_cocktails")
@@ -21,6 +23,20 @@ data class FavoriteCocktailEntity(
     val badge: String,
     @ColumnInfo(name = "saved_at")
     val savedAt: Long
+)
+
+fun FavoriteCocktailEntity.toModel(): FavoriteCocktailSummary = FavoriteCocktailSummary(
+    favoriteKey = favoriteKey,
+    source = when (source) {
+        "local" -> CocktailSource.LOCAL
+        else -> CocktailSource.REMOTE
+    },
+    id = remoteIdOrLocalId,
+    name = name,
+    imageUrl = imageUrl,
+    category = category,
+    badge = badge,
+    savedAt = savedAt
 )
 
 fun CocktailDetail.toFavoriteEntity(

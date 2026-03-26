@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.LocalBar
 import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material3.Icon
@@ -34,6 +35,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.supdevinci.lagnioledepapi.model.CocktailSource
 import com.supdevinci.lagnioledepapi.view.BacTestScreen
+import com.supdevinci.lagnioledepapi.view.CellarScreen
 import com.supdevinci.lagnioledepapi.view.CocktailDetailScreen
 import com.supdevinci.lagnioledepapi.view.CocktailListScreen
 import com.supdevinci.lagnioledepapi.view.CreateCocktailScreen
@@ -41,6 +43,7 @@ import com.supdevinci.lagnioledepapi.view.RankingScreen
 import com.supdevinci.lagnioledepapi.view.theme.LaGnioleDePapiTheme
 import com.supdevinci.lagnioledepapi.viewmodel.AppViewModelProvider
 import com.supdevinci.lagnioledepapi.viewmodel.BacTestViewModel
+import com.supdevinci.lagnioledepapi.viewmodel.CellarViewModel
 import com.supdevinci.lagnioledepapi.viewmodel.CocktailDetailViewModel
 import com.supdevinci.lagnioledepapi.viewmodel.CocktailListViewModel
 import com.supdevinci.lagnioledepapi.viewmodel.CreateCocktailViewModel
@@ -66,6 +69,7 @@ private data class TopLevelDestination(
 
 private object Routes {
     const val cocktails = "cocktails"
+    const val cellar = "cellar"
     const val ranking = "ranking"
     const val bacTest = "bac_test"
     const val createCocktail = "create_cocktail"
@@ -81,6 +85,7 @@ private fun LaGnioleApp() {
     val navController = rememberNavController()
     val destinations = listOf(
         TopLevelDestination(Routes.cocktails, "Cocktails", Icons.Outlined.LocalBar),
+        TopLevelDestination(Routes.cellar, "Ma cave", Icons.Outlined.Favorite),
         TopLevelDestination(Routes.ranking, "Classement", Icons.Outlined.EmojiEvents),
         TopLevelDestination(Routes.bacTest, "Test", Icons.Outlined.Science),
         TopLevelDestination(Routes.createCocktail, "Créer", Icons.Outlined.Add)
@@ -150,6 +155,18 @@ private fun LaGnioleApp() {
                     factory = AppViewModelProvider.rankingFactory(appContainer)
                 )
                 RankingScreen(rankingViewModel)
+            }
+            composable(Routes.cellar) {
+                val cellarViewModel = viewModel(
+                    modelClass = CellarViewModel::class.java,
+                    factory = AppViewModelProvider.cellarFactory(appContainer)
+                )
+                CellarScreen(
+                    viewModel = cellarViewModel,
+                    onOpenDetail = { source, id ->
+                        navController.navigate(Routes.cocktailDetail(source, id))
+                    }
+                )
             }
             composable(Routes.bacTest) {
                 val bacTestViewModel = viewModel(
