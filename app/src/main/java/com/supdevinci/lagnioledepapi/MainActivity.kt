@@ -15,12 +15,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.supdevinci.lagnioledepapi.view.components.GnioleLaunchSplash
 import com.supdevinci.lagnioledepapi.view.theme.LaGnioleDePapiTheme
 
 class MainActivity : ComponentActivity() {
@@ -30,9 +34,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LaGnioleDePapiTheme {
-                LaGnioleApp()
+                LaGnioleRoot()
             }
         }
+    }
+}
+
+@Composable
+private fun LaGnioleRoot() {
+    var showSplash by rememberSaveable { mutableStateOf(true) }
+
+    if (showSplash) {
+        GnioleLaunchSplash(
+            onFinished = { showSplash = false }
+        )
+    } else {
+        LaGnioleApp()
     }
 }
 
