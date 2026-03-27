@@ -13,8 +13,10 @@ class DrinkMappingTest {
 
         assertEquals(3, ingredients.size)
         assertEquals("Tequila", ingredients[0].name)
-        assertEquals("2 cl", ingredients[0].dose)
-        assertEquals("Citron", ingredients[2].name)
+        assertEquals("4,5 cl", ingredients[0].dose)
+        assertEquals("2 c. à café", ingredients[1].dose)
+        assertEquals("Soda water", ingredients[2].name)
+        assertEquals("trait", ingredients[2].dose)
     }
 
     @Test
@@ -34,6 +36,35 @@ class DrinkMappingTest {
         assertTrue(response.drinks.orEmpty().isEmpty())
     }
 
+    @Test
+    fun normalizeRemoteMeasure_translatesOpeningExpression() {
+        assertEquals(
+            "Compléter avec soda water",
+            RemoteMeasureLocalizer.normalize("Top up with soda water")
+        )
+    }
+
+    @Test
+    fun normalizeRemoteMeasure_keepsUnknownFormulaUntouched() {
+        assertEquals(
+            "Special blender magic",
+            RemoteMeasureLocalizer.normalize("  Special   blender   magic ")
+        )
+    }
+
+    @Test
+    fun customCocktailToDetail_preservesLocalDoses() {
+        val detail = CustomCocktail(
+            id = 7L,
+            name = "Le Local Brut",
+            story = "Recette maison.",
+            ingredients = listOf(CustomIngredient(name = "Rhum", dose = "1 1/2 oz")),
+            createdAt = 1234L
+        ).toDetail()
+
+        assertEquals("1 1/2 oz", detail.ingredients.single().dose)
+    }
+
     private fun sampleDrink(): Drink = Drink(
         id = "42",
         name = "Margarita du Beaujolais",
@@ -43,7 +74,7 @@ class DrinkMappingTest {
         instructions = "Tout secouer et servir frais.",
         strIngredient1 = "Tequila",
         strIngredient2 = "Triple sec",
-        strIngredient3 = "Citron",
+        strIngredient3 = "Soda water",
         strIngredient4 = null,
         strIngredient5 = null,
         strIngredient6 = null,
@@ -56,9 +87,9 @@ class DrinkMappingTest {
         strIngredient13 = null,
         strIngredient14 = null,
         strIngredient15 = null,
-        strMeasure1 = "2 cl",
-        strMeasure2 = "1 cl",
-        strMeasure3 = "1 trait",
+        strMeasure1 = "1 1/2 oz",
+        strMeasure2 = "2 tsp",
+        strMeasure3 = "Dash",
         strMeasure4 = null,
         strMeasure5 = null,
         strMeasure6 = null,

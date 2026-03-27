@@ -1,6 +1,7 @@
 package com.supdevinci.lagnioledepapi.model
 
 import com.google.gson.annotations.SerializedName
+import kotlin.math.roundToInt
 
 data class CocktailResponse(
     @SerializedName("drinks") val drinks: List<Drink>?
@@ -95,7 +96,7 @@ data class Drink(
             } else {
                 CustomIngredient(
                     name = trimmedIngredient,
-                    dose = measure?.trim().orEmpty()
+                    dose = RemoteMeasureLocalizer.normalize(measure.orEmpty())
                 )
             }
         }
@@ -118,4 +119,155 @@ data class Drink(
         badge = alcoholic ?: "Classique",
         accent = "Recette du zinc"
     )
+}
+
+internal object RemoteMeasureLocalizer {
+    private const val OUNCE_TO_CL = 2.957
+    private val spacingRegex = Regex("\\s+")
+    private val mixedNumberRegex = Regex("^(\\d+)[ -](\\d+)/(\\d+)$")
+    private val fractionRegex = Regex("^(\\d+)/(\\d+)$")
+    private val decimalRegex = Regex("^\\d+(?:[.,]\\d+)?$")
+    private val amountUnitRegex = Regex(
+        pattern = "^(?:(\\d+(?:[.,]\\d+)?(?:[ -]\\d+/\\d+)?|\\d+/\\d+)\\s+)?(oz\\.?|ounce|ounces|tsp\\.?|teaspoons?|tbsp\\.?|tblsp\\.?|tablespoons?|cups?|dash(?:es)?|splash(?:es)?|drops?|slices?|wedges?|sprigs?|leaf|leaves|cubes?|pinch|parts?)(?:\\b\\s*(.*))?$",
+        options = setOf(RegexOption.IGNORE_CASE)
+    )
+    private val phraseTranslations = listOf(
+        PhraseTranslation(source = "top up with", target = "Compléter avec"),
+        PhraseTranslation(source = "top with", target = "Compléter avec"),
+        PhraseTranslation(source = "fill with", target = "Compléter avec"),
+        PhraseTranslation(source = "juice of", target = "Jus de"),
+        PhraseTranslation(source = "twist of", target = "Zeste de")
+    )
+    private val unitTranslations = mapOf(
+        "tsp" to UnitTranslation("c. à café"),
+        "teaspoon" to UnitTranslation("c. à café"),
+        "teaspoons" to UnitTranslation("c. à café"),
+        "tbsp" to UnitTranslation("c. à soupe"),
+        "tblsp" to UnitTranslation("c. à soupe"),
+        "tablespoon" to UnitTranslation("c. à soupe"),
+        "tablespoons" to UnitTranslation("c. à soupe"),
+        "cup" to UnitTranslation("tasse", "tasses"),
+        "cups" to UnitTranslation("tasse", "tasses"),
+        "dash" to UnitTranslation("trait", "traits"),
+        "dashes" to UnitTranslation("trait", "traits"),
+        "splash" to UnitTranslation("trait", "traits"),
+        "splashes" to UnitTranslation("trait", "traits"),
+        "drop" to UnitTranslation("goutte", "gouttes"),
+        "drops" to UnitTranslation("goutte", "gouttes"),
+        "slice" to UnitTranslation("tranche", "tranches"),
+        "slices" to UnitTranslation("tranche", "tranches"),
+        "wedge" to UnitTranslation("quartier", "quartiers"),
+        "wedges" to UnitTranslation("quartier", "quartiers"),
+        "sprig" to UnitTranslation("brin", "brins"),
+        "sprigs" to UnitTranslation("brin", "brins"),
+        "leaf" to UnitTranslation("feuille", "feuilles"),
+        "leaves" to UnitTranslation("feuille", "feuilles"),
+        "cube" to UnitTranslation("cube", "cubes"),
+        "cubes" to UnitTranslation("cube", "cubes"),
+        "pinch" to UnitTranslation("pincée"),
+        "part" to UnitTranslation("part", "parts"),
+        "parts" to UnitTranslation("part", "parts")
+    )
+
+    fun normalize(measure: String): String {
+        val normalized = measure.normalizeSpacing()
+        if (normalized.isBlank()) return ""
+
+        translatePhrase(normalized)?.let { return it }
+
+        val match = amountUnitRegex.matchEntire(normalized) ?: return normalized
+        val amountText = match.groupValues[1].ifBlank { null }
+        val rawUnit = match.groupValues[2].normalizeUnitKey()
+        val suffix = match.groupValues[3].normalizeSpacing()
+        val amount = amountText?.let(::parseAmount) ?: if (amountText == null) null else return normalized
+
+        if (rawUnit in ounceUnits) {
+            if (amount == null) return normalized
+            val roundedHalfCl = (amount * OUNCE_TO_CL * 2).roundToInt()
+            val centiliters = formatHalfStepValue(roundedHalfCl)
+            return appendSuffix("$centiliters cl", suffix)
+        }
+
+        val translation = unitTranslations[rawUnit] ?: return normalized
+        val translatedUnit = if (isPlural(amount, rawUnit)) translation.plural else translation.singular
+        val translatedAmount = amountText?.let(::normalizeAmountDisplay)
+        val base = listOfNotNull(translatedAmount, translatedUnit).joinToString(" ")
+        return appendSuffix(base, suffix)
+    }
+
+    private fun translatePhrase(measure: String): String? {
+        val lowercase = measure.lowercase()
+        val match = phraseTranslations.firstOrNull { translation ->
+            lowercase == translation.source || lowercase.startsWith("${translation.source} ")
+        } ?: return null
+        val remainder = measure.drop(match.source.length).trim()
+        return appendSuffix(match.target, remainder)
+    }
+
+    private fun parseAmount(amountText: String): Double? {
+        val normalized = amountText.trim().replace(',', '.')
+        mixedNumberRegex.matchEntire(normalized)?.let { match ->
+            val whole = match.groupValues[1].toDouble()
+            val numerator = match.groupValues[2].toDouble()
+            val denominator = match.groupValues[3].toDouble()
+            if (denominator == 0.0) return null
+            return whole + (numerator / denominator)
+        }
+        fractionRegex.matchEntire(normalized)?.let { match ->
+            val numerator = match.groupValues[1].toDouble()
+            val denominator = match.groupValues[2].toDouble()
+            if (denominator == 0.0) return null
+            return numerator / denominator
+        }
+        return if (decimalRegex.matches(normalized)) normalized.toDoubleOrNull() else null
+    }
+
+    private fun normalizeAmountDisplay(amountText: String): String {
+        val normalized = amountText.normalizeSpacing().replace(',', '.')
+        mixedNumberRegex.matchEntire(normalized)?.let { match ->
+            return "${match.groupValues[1]} ${match.groupValues[2]}/${match.groupValues[3]}"
+        }
+        return normalized.replace('.', ',')
+    }
+
+    private fun isPlural(amount: Double?, rawUnit: String): Boolean {
+        if (amount != null) {
+            return amount > 1.0
+        }
+        return rawUnit.endsWith("s") || rawUnit == "leaves"
+    }
+
+    private fun appendSuffix(base: String, suffix: String): String {
+        if (suffix.isBlank()) return base
+        return if (suffix.firstOrNull()?.isLetterOrDigit() == true) {
+            "$base $suffix"
+        } else {
+            "$base$suffix"
+        }
+    }
+
+    private fun formatHalfStepValue(halfSteps: Int): String {
+        val whole = halfSteps / 2
+        return if (halfSteps % 2 == 0) {
+            whole.toString()
+        } else {
+            "$whole,5"
+        }
+    }
+
+    private fun String.normalizeSpacing(): String = trim().replace(spacingRegex, " ")
+
+    private fun String.normalizeUnitKey(): String = lowercase().removeSuffix(".")
+
+    private data class UnitTranslation(
+        val singular: String,
+        val plural: String = singular
+    )
+
+    private data class PhraseTranslation(
+        val source: String,
+        val target: String
+    )
+
+    private val ounceUnits = setOf("oz", "ounce", "ounces")
 }

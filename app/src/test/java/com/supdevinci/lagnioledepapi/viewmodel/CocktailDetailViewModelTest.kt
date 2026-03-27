@@ -80,7 +80,10 @@ class CocktailDetailViewModelTest {
         val stats = userStatsRepository.observeStats().first()
 
         assertTrue(share.text.contains("Margarita du Beaujolais"))
-        assertTrue(copy.text.contains("Tequila"))
+        assertTrue(share.text.contains("• Tequila - 4,5 cl"))
+        assertTrue(share.text.contains("• Triple sec - 2 c. à café"))
+        assertTrue(copy.text.contains("• Tequila - 4,5 cl"))
+        assertTrue(copy.text.contains("• Soda water - trait"))
         assertEquals(1, stats.shareActions)
         assertEquals(1, stats.copyActions)
     }
@@ -109,7 +112,7 @@ class CocktailDetailViewModelTest {
             instructions = "Tout secouer et servir frais.",
             strIngredient1 = "Tequila",
             strIngredient2 = "Triple sec",
-            strIngredient3 = "Citron",
+            strIngredient3 = "Soda water",
             strIngredient4 = null,
             strIngredient5 = null,
             strIngredient6 = null,
@@ -122,9 +125,9 @@ class CocktailDetailViewModelTest {
             strIngredient13 = null,
             strIngredient14 = null,
             strIngredient15 = null,
-            strMeasure1 = "2 cl",
-            strMeasure2 = "1 cl",
-            strMeasure3 = "1 trait",
+            strMeasure1 = "1 1/2 oz",
+            strMeasure2 = "2 tsp",
+            strMeasure3 = "Dash",
             strMeasure4 = null,
             strMeasure5 = null,
             strMeasure6 = null,
